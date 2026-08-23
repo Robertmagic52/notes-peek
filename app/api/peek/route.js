@@ -5,46 +5,63 @@ let currentThought = 'Waiting for input...';
 let historyLog = [];
 let stopShortcut = false;
 
-// 1. The security keys allowing the Apple Shortcut to transmit data
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-// 2. Handle the pre-flight security check the iPhone sends
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
 export async function GET() {
   return NextResponse.json({
     thought: currentThought,
     history: historyLog,
     action: stopShortcut ? 'stop' : 'continue',
-  }, { headers: corsHeaders });
+  });
 }
 
 export async function POST(request) {
   try {
-    const rawText = await request.text();
-    let body;
-    
-    try {
-      body = JSON.parse(rawText);
-    } catch (e) {
-      body = { text: rawText };
-    }
-    
-    if (body.action === 'clear') {
-      currentThought = 'Waiting for input...';
-      stopShortcut = true; 
-      return NextResponse.json({ success: true, action: 'stop' }, { headers: corsHeaders });
+    let thought = '';
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('form') || contentType.includes('urlencoded') || request.method === 'POST') {
+      try {
+        const formData = await request.formData();
+        thought = formData.get('thought') || formData.get('text') || formData.get('noteBody') || '';
+      } catch (e) {
+        thought = await request.text();
+      }
     }
 
-    // Try catching every possible way the Shortcut might format the text
-    const thought = body.thought || body.text || body.value || (typeof body === 'string' ? body : null);
-    
+    // Convert thought to string safely
+    if (typeof thought !== 'string') {
+      thought = String(thought || '');
+    }
+
+    // Strip "thought=" prefix if it accidentally got prepended
+    if (thought.startsWith('thought=')) {
+      thought = thought.substring(8);
+    }
+
+    // Clean up RTF / Base64 wrappers
+    if (thought.startsWith('e1xydGY') || thought.includes('\\rtf') || /^[A-Za-z0-9+/=]+$/.test(thought) && thought.length > 20) {
+      try {
+        const base64Clean = thought.replace(/^thought=/, '');
+        const decoded = Buffer.from(base64Clean, 'base64').toString('utf8');
+        const cleaned = decoded.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
+        if (cleaned.length > 0) {
+          thought = cleaned;
+        }
+      } catch (err) {
+        // Fallback if base64 decoding throws an error
+      }
+    }
+
+    // Final regex pass to eliminate any lingering RTF tags
+    if (thought.includes('\\rtf') || thought.includes('\\ansicpg')) {
+      thought = thought.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
+    }
+
+    if (thought === 'clear') {
+      currentThought = 'Waiting for input...';
+      stopShortcut = true; 
+      return NextResponse.json({ success: true, action: 'stop' });
+    }
+
     if (thought && thought.trim() !== '') {
       currentThought = thought;
       stopShortcut = false; 
@@ -59,10 +76,8 @@ export async function POST(request) {
       thought: currentThought, 
       history: historyLog, 
       action: stopShortcut ? 'stop' : 'continue' 
-    }, { headers: corsHeaders });
-
+    });
   } catch (error) {
-    console.error("API Error:", error);
-    return NextResponse.json({ success: false, error: 'Failed' }, { status: 400, headers: corsHeaders });
+    return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
   }
 }
