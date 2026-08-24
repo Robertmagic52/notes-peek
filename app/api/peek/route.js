@@ -21,52 +21,54 @@ export async function POST(request) {
     if (contentType.includes('form') || contentType.includes('urlencoded') || request.method === 'POST') {
       try {
         const formData = await request.formData();
-        thought = formData.get('thought') || formData.get('text') || formData.get('noteBody') || '';
+        thought = formData.get('thought') || formData.get('text') || formData.get('noteBody');
       } catch (e) {
         thought = await request.text();
       }
     }
 
-    // Convert thought to string safely
-    if (typeof thought !== 'string') {
-      thought = String(thought || '');
-    }
-
-    // Strip "thought=" prefix if it accidentally got prepended
-    if (thought.startsWith('thought=')) {
-      thought = thought.substring(8);
-    }
-
-    // Clean up RTF / Base64 wrappers
-    if (thought.startsWith('e1xydGY') || thought.includes('\\rtf') || /^[A-Za-z0-9+/=]+$/.test(thought) && thought.length > 20) {
-      try {
-        const base64Clean = thought.replace(/^thought=/, '');
-        const decoded = Buffer.from(base64Clean, 'base64').toString('utf8');
-        const cleaned = decoded.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
-        if (cleaned.length > 0) {
-          thought = cleaned;
+    // Decode and clean up RTF / Base64 strings automatically
+    if (typeof thought === 'string') {
+      // If it looks like base64-encoded RTF data starting with e1xydGY
+      if (thought.startsWith('e1xydGY') || /^[A-Za-z0-9+/=]+$/.test(thought) && thought.length > 20) {
+        try {
+          const decoded = Buffer.from(thought, 'base64').toString('utf8');
+          // Strip RTF control words and brackets to leave pure text
+          const cleaned = decoded.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
+          if (cleaned.length > 0) {
+            thought = cleaned;
+          }
+        } catch (err) {
+          // Keep raw if decoding fails
         }
-      } catch (err) {
-        // Fallback if base64 decoding throws an error
+      }
+      
+      // Secondary cleanup if raw RTF tags came through directly
+      if (thought.includes('\\rtf')) {
+        thought = thought.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
       }
     }
 
-    // Final regex pass to eliminate any lingering RTF tags
-    if (thought.includes('\\rtf') || thought.includes('\\ansicpg')) {
-      thought = thought.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
-    }
-
-    if (thought === 'clear') {
-      currentThought = 'Waiting for input...';
+    // COMMAND 1: Stop the iOS shortcut loop
+    if (thought === 'stop') {
       stopShortcut = true; 
       return NextResponse.json({ success: true, action: 'stop' });
     }
 
-    if (thought && thought.trim() !== '') {
+    // COMMAND 2: Wipe the current thought AND history board
+    if (thought === 'clear') {
+      currentThought = 'Waiting for input...';
+      historyLog = [];
+      stopShortcut = false; // Resets the flag so you can start a new loop later
+      return NextResponse.json({ success: true, action: 'continue' });
+    }
+
+    // Process actual inputs
+    if (thought && typeof thought === 'string' && thought.trim() !== '') {
       currentThought = thought;
       stopShortcut = false; 
       
-      if (thought !== 'Cleared!' && !historyLog.includes(thought)) {
+      if (thought !== 'Waiting for input...' && thought !== 'Cleared!' && !historyLog.includes(thought)) {
         historyLog = [thought, ...historyLog].slice(0, 10);
       }
     }
