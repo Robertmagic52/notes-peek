@@ -15,60 +15,74 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    let thought = '';
+    let bodyData = {};
+    let rawText = '';
     const contentType = request.headers.get('content-type') || '';
 
-    if (contentType.includes('form') || contentType.includes('urlencoded') || request.method === 'POST') {
+    // Handle JSON payloads (sent by your dashboard button)
+    if (contentType.includes('application/json')) {
+      try {
+        bodyData = await request.json();
+        if (bodyData.action === 'stop' || bodyData.thought === 'stop') {
+          stopShortcut = true;
+          return NextResponse.json({ success: true, action: 'stop' });
+        }
+        if (bodyData.action === 'clear' || bodyData.thought === 'clear') {
+          currentThought = 'Waiting for input...';
+          historyLog = [];
+          stopShortcut = false;
+          return NextResponse.json({ success: true, action: 'continue' });
+        }
+        if (bodyData.thought) {
+          rawText = bodyData.thought;
+        }
+      } catch (e) {
+        // Fallback if JSON parse fails
+      }
+    } 
+    
+    // Handle form data or raw text inputs (sent by iOS shortcuts)
+    if (!rawText) {
       try {
         const formData = await request.formData();
-        thought = formData.get('thought') || formData.get('text') || formData.get('noteBody');
+        rawText = formData.get('thought') || formData.get('text') || formData.get('noteBody') || '';
       } catch (e) {
-        thought = await request.text();
+        rawText = await request.text();
       }
     }
 
-    // Decode and clean up RTF / Base64 strings automatically
-    if (typeof thought === 'string') {
-      // If it looks like base64-encoded RTF data starting with e1xydGY
-      if (thought.startsWith('e1xydGY') || /^[A-Za-z0-9+/=]+$/.test(thought) && thought.length > 20) {
+    if (rawText === 'stop') {
+      stopShortcut = true;
+      return NextResponse.json({ success: true, action: 'stop' });
+    }
+
+    if (rawText === 'clear') {
+      currentThought = 'Waiting for input...';
+      historyLog = [];
+      stopShortcut = false;
+      return NextResponse.json({ success: true, action: 'continue' });
+    }
+
+    // Decode base64 RTF if sent from Apple Notes shortcuts
+    let thought = rawText;
+    if (typeof thought === 'string' && thought.length > 0) {
+      if (thought.startsWith('e1xydGY') || (/^[A-Za-z0-9+/=]+$/.test(thought) && thought.length > 20)) {
         try {
           const decoded = Buffer.from(thought, 'base64').toString('utf8');
-          // Strip RTF control words and brackets to leave pure text
           const cleaned = decoded.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
-          if (cleaned.length > 0) {
-            thought = cleaned;
-          }
-        } catch (err) {
-          // Keep raw if decoding fails
-        }
+          if (cleaned.length > 0) thought = cleaned;
+        } catch (err) {}
       }
-      
-      // Secondary cleanup if raw RTF tags came through directly
       if (thought.includes('\\rtf')) {
         thought = thought.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
       }
     }
 
-    // COMMAND 1: Stop the iOS shortcut loop
-    if (thought === 'stop') {
-      stopShortcut = true; 
-      return NextResponse.json({ success: true, action: 'stop' });
-    }
-
-    // COMMAND 2: Wipe the current thought AND history board
-    if (thought === 'clear') {
-      currentThought = 'Waiting for input...';
-      historyLog = [];
-      stopShortcut = false; // Resets the flag so you can start a new loop later
-      return NextResponse.json({ success: true, action: 'continue' });
-    }
-
-    // Process actual inputs
+    // Process normal incoming peek thoughts
     if (thought && typeof thought === 'string' && thought.trim() !== '') {
       currentThought = thought;
-      stopShortcut = false; 
-      
-      if (thought !== 'Waiting for input...' && thought !== 'Cleared!' && !historyLog.includes(thought)) {
+      stopShortcut = false;
+      if (thought !== 'Waiting for input...' && !historyLog.includes(thought)) {
         historyLog = [thought, ...historyLog].slice(0, 10);
       }
     }
