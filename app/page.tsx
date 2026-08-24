@@ -1,70 +1,80 @@
+// app/page.js
 'use client';
+
 import { useState, useEffect } from 'react';
 
-export default function Dashboard() {
-  const [thought, setThought] = useState<string>('Waiting for input...');
-  const [history, setHistory] = useState<string[]>([]);
+export default function PeekDashboard() {
+  const [status, setStatus] = useState("continue");
+  const [thought, setThought] = useState("");
 
+  // Polls the server every second to instantly show your captured notes
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch('/api/peek');
         const data = await res.json();
-        if (data.thought) setThought(data.thought);
-        if (data.history) setHistory(data.history);
-      } catch (e) {
-        console.error('Polling error', e);
+        setStatus(data.action);
+        setThought(data.thought);
+      } catch (error) {
+        console.error("Error fetching peek:", error);
       }
-    }, 200); 
-
+    }, 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
-  // 1. Stop Function: Sends "stop" to the API to kill the Shortcut
   const handleStop = async () => {
     await fetch('/api/peek', {
       method: 'POST',
-      body: new URLSearchParams({ thought: 'stop' }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stop' }),
     });
+    setStatus("stop");
   };
 
-  // 2. Clear Function: Sends "clear" to the API and wipes local history
-  const handleClear = async () => {
+  const handleReset = async () => {
     await fetch('/api/peek', {
       method: 'POST',
-      body: new URLSearchParams({ thought: 'clear' }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'continue' }),
     });
-    setThought('Waiting for input...');
-    setHistory([]); 
+    setStatus("continue");
+    setThought(""); // Visually clear the old note off the screen
   };
 
   return (
-    <main style={{ background: '#0a0314', color: '#fff', minHeight: '100vh', padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>
-      <h1>NOTE PEEK RECEIVER</h1>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+      <h1>Dashboard</h1>
       
-      {/* Renamed to STOP PEEK - Changed to red for visibility */}
-      <button onClick={handleStop} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '30px', fontSize: '16px', cursor: 'pointer', margin: '20px 0' }}>
-        STOP PEEK
-      </button>
-
-      <div style={{ border: '1px solid #7c3aed', padding: '20px', borderRadius: '10px', maxWidth: '500px', margin: '20px auto', background: '#120624' }}>
-        <h3>INTERCEPTED THOUGHT:</h3>
-        <p style={{ fontSize: '24px', fontWeight: 'bold' }}>{thought}</p>
+      {/* The Peek Display Container */}
+      <div style={{ margin: '2rem 0', padding: '2rem', border: '2px solid #333', borderRadius: '12px', minHeight: '150px' }}>
+        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#666' }}>Incoming Data:</h2>
+        <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0 }}>
+          {thought || "Waiting for input..."}
+        </p>
       </div>
 
-      <div style={{ border: '1px solid #7c3aed', padding: '20px', borderRadius: '10px', maxWidth: '500px', margin: '20px auto', background: '#120624' }}>
-        <h3>PEEK HISTORY</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {history.map((item, index) => (
-            <li key={index} style={{ padding: '8px 0', borderBottom: '1px solid #2a1b4e' }}>{item}</li>
-          ))}
-        </ul>
+      {/* Controls */}
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <button 
+          onClick={handleStop}
+          style={{ flex: 1, padding: '1rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}
+        >
+          Stop Shortcut
+        </button>
         
-        {/* New CLEAR PEEK button added underneath history */}
-        <button onClick={handleClear} style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '30px', fontSize: '14px', cursor: 'pointer', marginTop: '20px' }}>
-          CLEAR PEEK
+        <button 
+          onClick={handleReset}
+          style={{ flex: 1, padding: '1rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}
+        >
+          Reset for Next Set
         </button>
       </div>
-    </main>
+      
+      {/* Status Indicator */}
+      <div style={{ marginTop: '2rem', textAlign: 'center', color: status === 'stop' ? '#ef4444' : '#22c55e' }}>
+        <strong>Status: {status === 'stop' ? 'Stopped 🛑' : 'Listening 🟢'}</strong>
+      </div>
+    </div>
   );
 }
