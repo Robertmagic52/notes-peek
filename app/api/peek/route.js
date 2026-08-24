@@ -1,99 +1,37 @@
-export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+// app/api/peek/route.js
 
-let currentThought = 'Waiting for input...';
-let historyLog = [];
-let stopShortcut = false;
+// In-memory state to hold your peeks and action commands
+let serverState = {
+  action: "continue",
+  thought: "",
+  history: []
+};
 
 export async function GET() {
-  return NextResponse.json({
-    thought: currentThought,
-    history: historyLog,
-    action: stopShortcut ? 'stop' : 'continue',
-  });
+  return Response.json(serverState);
 }
 
 export async function POST(request) {
   try {
-    let bodyData = {};
-    let rawText = '';
-    const contentType = request.headers.get('content-type') || '';
+    const body = await request.json();
 
-    // Handle JSON payloads (sent by your dashboard button)
-    if (contentType.includes('application/json')) {
-      try {
-        bodyData = await request.json();
-        if (bodyData.action === 'stop' || bodyData.thought === 'stop') {
-          stopShortcut = true;
-          return NextResponse.json({ success: true, action: 'stop' });
-        }
-        if (bodyData.action === 'clear' || bodyData.thought === 'clear') {
-          currentThought = 'Waiting for input...';
-          historyLog = [];
-          stopShortcut = false;
-          return NextResponse.json({ success: true, action: 'continue' });
-        }
-        if (bodyData.thought) {
-          rawText = bodyData.thought;
-        }
-      } catch (e) {
-        // Fallback if JSON parse fails
-      }
-    } 
-    
-    // Handle form data or raw text inputs (sent by iOS shortcuts)
-    if (!rawText) {
-      try {
-        const formData = await request.formData();
-        rawText = formData.get('thought') || formData.get('text') || formData.get('noteBody') || '';
-      } catch (e) {
-        rawText = await request.text();
-      }
+    // If you hit the Reset button, completely clear the state for the next performance
+    if (body.action === 'continue') {
+      serverState = {
+        action: "continue",
+        thought: "",
+        history: [] 
+      };
+    } else {
+      // Standard update: capturing a new note or hitting Stop
+      serverState = {
+        ...serverState,
+        ...body
+      };
     }
 
-    if (rawText === 'stop') {
-      stopShortcut = true;
-      return NextResponse.json({ success: true, action: 'stop' });
-    }
-
-    if (rawText === 'clear') {
-      currentThought = 'Waiting for input...';
-      historyLog = [];
-      stopShortcut = false;
-      return NextResponse.json({ success: true, action: 'continue' });
-    }
-
-    // Decode base64 RTF if sent from Apple Notes shortcuts
-    let thought = rawText;
-    if (typeof thought === 'string' && thought.length > 0) {
-      if (thought.startsWith('e1xydGY') || (/^[A-Za-z0-9+/=]+$/.test(thought) && thought.length > 20)) {
-        try {
-          const decoded = Buffer.from(thought, 'base64').toString('utf8');
-          const cleaned = decoded.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
-          if (cleaned.length > 0) thought = cleaned;
-        } catch (err) {}
-      }
-      if (thought.includes('\\rtf')) {
-        thought = thought.replace(/\\[a-z0-9-]+\\?/g, ' ').replace(/[{}]/g, '').trim();
-      }
-    }
-
-    // Process normal incoming peek thoughts
-    if (thought && typeof thought === 'string' && thought.trim() !== '') {
-      currentThought = thought;
-      stopShortcut = false;
-      if (thought !== 'Waiting for input...' && !historyLog.includes(thought)) {
-        historyLog = [thought, ...historyLog].slice(0, 10);
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      thought: currentThought, 
-      history: historyLog, 
-      action: stopShortcut ? 'stop' : 'continue' 
-    });
+    return Response.json({ success: true, state: serverState });
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+    return Response.json({ success: false, error: "Invalid request" }, { status: 400 });
   }
 }
