@@ -1,4 +1,4 @@
-'use client';
+'use class';
 
 import { useState, useEffect } from 'react';
 
@@ -95,7 +95,7 @@ export default function PeekDashboard() {
         </p>
       </div>
 
-      {/* Spacer to push history to the bottom */}
+      {/* Spacer to push history and download button to the bottom */}
       <div style={{ flexGrow: 1 }}></div>
 
       {/* History Feed Section */}
@@ -113,6 +113,18 @@ export default function PeekDashboard() {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Download Shortcut Button */}
+      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <a 
+          href="https://www.icloud.com/shortcuts/da003ebafb424909a339a60832ebf312" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ display: 'inline-block', width: '100%', padding: '1rem', backgroundColor: '#0070f3', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.05rem', boxSizing: 'border-box' }}
+        >
+          Download iOS Shortcut 📥
+        </a>
       </div>
     </div>
   );
