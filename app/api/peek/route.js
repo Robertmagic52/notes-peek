@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 let serverState = {
   action: "continue",
   thought: "",
@@ -18,7 +20,6 @@ export async function POST(request) {
 
     if (body.action === 'continue') {
       serverState.action = 'continue';
-      // If we are doing a hard reset of everything from the shortcut
       if (!body.thought && body.reset) {
          serverState.thought = '';
          serverState.history = [];
