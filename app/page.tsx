@@ -1,4 +1,4 @@
-'use class';
+'use client';
 
 import { useState, useEffect } from 'react';
 
