@@ -1,36 +1,36 @@
 import { NextResponse } from 'next/server';
 
-let sessionState = {
+let screenshotState = {
   command: 'idle', // 'idle' or 'screenshot'
   screenshot: null,
 };
 
-// GET: Returns current command state AND the screenshot image if available
+// GET: Called by the iOS Shortcut to check if it should snap the screen
 export async function GET() {
   return NextResponse.json({ 
-    command: sessionState.command, 
-    screenshot: sessionState.screenshot 
+    command: screenshotState.command, 
+    screenshot: screenshotState.screenshot 
   });
 }
 
-// POST: Sets the command from the frontend OR receives the image from the Shortcut
+// POST: Called by your Frontend (to trigger) or the Shortcut (to upload the base64 image)
 export async function POST(req) {
   try {
     const body = await req.json();
 
-    // Frontend clicked the button to trigger a capture
+    // If frontend clicked the button, set command to 'screenshot'
     if (body.command) {
-      sessionState.command = body.command;
+      screenshotState.command = body.command;
       if (body.command === 'screenshot') {
-        sessionState.screenshot = null; // Clear old screenshot on new trigger
+        screenshotState.screenshot = null; // Clear old image on new request
       }
-      return NextResponse.json({ success: true, command: sessionState.command });
+      return NextResponse.json({ success: true, command: screenshotState.command });
     }
 
-    // Shortcut uploaded the base64 screenshot
+    // If the Shortcut uploaded the base64 screenshot
     if (body.image) {
-      sessionState.screenshot = body.image;
-      sessionState.command = 'idle'; // Reset back to idle
+      screenshotState.screenshot = body.image;
+      screenshotState.command = 'idle'; // Reset command back to idle
       return NextResponse.json({ success: true });
     }
 
