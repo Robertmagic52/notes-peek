@@ -56,7 +56,8 @@ export default function FakeNotesPage() {
 
       if (res.ok) {
         setStatus('sent');
-        document.activeElement?.blur();
+        // Safely blur the active element to dismiss mobile keyboard
+        (document.activeElement as HTMLElement)?.blur();
         setTimeout(() => setStatus('idle'), 2000);
       }
     } catch (err) {
