@@ -200,7 +200,7 @@ export default function FakeNotesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={`w-full pl-9 pr-4 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E5C02A] transition ${isDarkMode ? 'bg-[#2C2C2E] text-white' : 'bg-[#E3E3E8] text-black'}`}
-            >
+            />
           </div>
         </div>
 
@@ -290,7 +290,6 @@ export default function FakeNotesPage() {
             onInput={handleEditorInput}
             className="w-full h-full bg-transparent focus:outline-none text-[17px] leading-normal whitespace-pre-wrap"
             placeholder="Type your notes here..."
-            autoFocus
           />
         </div>
 
