@@ -1,113 +1,130 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
-export default function ScreenshotTabPage() {
-  const router = useRouter();
-  const [status, setStatus] = useState<'idle' | 'waiting' | 'received'>('idle');
-  const [screenshotData, setScreenshotData] = useState<string | null>(null);
+export default function PeekDashboard() {
+  const [status, setStatus] = useState("continue");
+  const [thought, setThought] = useState("");
+  const [history, setHistory] = useState([]);
 
-  // 1. Button Click: Posts the word "screenshot" to your backend
-  const handleTriggerScreenshot = async () => {
-    setStatus('waiting');
-    setScreenshotData(null);
-
-    try {
-      await fetch('/api/screenshot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: 'screenshot' }),
-      });
-    } catch (err) {
-      console.error('Failed to send trigger', err);
-      setStatus('idle');
-    }
-  };
-
-  // 2. Polling Loop: Checks the backend every 1.5 seconds for the incoming image
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('/api/screenshot');
+        const res = await fetch('/api/peek');
         const data = await res.json();
-
-        if (data.screenshot) {
-          setScreenshotData(data.screenshot);
-          setStatus('received');
-        }
-      } catch (err) {
-        console.error('Polling error', err);
+        setStatus(data.action);
+        setThought(data.thought || "");
+        setHistory(data.history || []);
+      } catch (error) {
+        console.error("Error fetching peek:", error);
       }
-    }, 1500);
-
+    }, 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
+  const handleStop = async () => {
+    await fetch('/api/peek', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stop' }),
+    });
+    setStatus("stop");
+  };
+
+  const handleResume = async () => {
+    await fetch('/api/peek', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'continue' }),
+    });
+    setStatus("continue");
+  };
+
+  const handleClearPeek = async () => {
+    await fetch('/api/peek', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear_peek' }),
+    });
+    setThought("");
+  };
+
   return (
-    <div 
-      className="min-h-screen bg-[#000000] text-white flex flex-col p-6 select-none"
-      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif' }}
-    >
-      {/* Top Header / Navigation Tab Bar */}
-      <div className="flex justify-between items-center mb-8 pb-4 border-b border-[#2C2C2E]">
-        <div className="flex items-center space-x-4">
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <h1>Dashboard</h1>
+      
+      {/* Primary Controls */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+        {status === 'stop' ? (
           <button 
-            onClick={() => router.push('/')}
-            className="text-[#E5C02A] text-sm font-medium"
+            onClick={handleResume}
+            style={{ flex: 1, padding: '1rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}
           >
-            ← Back to Notes
+            Resume Listening 🟢
           </button>
-          <h1 className="text-xl font-bold">Remote Divination Tab</h1>
-        </div>
-        <div className="flex bg-[#1C1C1E] p-1 rounded-lg text-xs font-semibold">
-          <button className="px-3 py-1.5 rounded-md bg-[#2C2C2E] text-white">Screenshot View</button>
-        </div>
+        ) : (
+          <button 
+            onClick={handleStop}
+            style={{ flex: 1, padding: '1rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}
+          >
+            Stop Shortcut 🛑
+          </button>
+        )}
       </div>
 
-      {/* Main Container */}
-      <div className="flex flex-col items-center flex-1 max-w-md mx-auto w-full space-y-6">
-        
-        {/* The Trigger Button */}
-        <button 
-          onClick={handleTriggerScreenshot}
-          className="w-full py-4 bg-[#E5C02A] text-black font-bold text-lg rounded-2xl shadow-lg active:scale-95 transition-transform"
-        >
-          {status === 'waiting' ? 'Waiting for Device...' : 'Take Screenshot'}
-        </button>
+      <div style={{ textAlign: 'center', color: status === 'stop' ? '#ef4444' : '#22c55e', marginBottom: '2rem' }}>
+        <strong>Status: {status === 'stop' ? 'Stopped' : 'Listening'}</strong>
+      </div>
 
-        {/* Status Indicator */}
-        <div className="text-xs text-gray-400 tracking-wide uppercase">
-          Status: <span className="text-white font-mono">{status}</span>
-        </div>
-
-        {/* Screenshot Display Area (Right underneath the button) */}
-        <div className="w-full flex-1 flex items-center justify-center">
-          {screenshotData ? (
-            <div className="w-full border border-[#38383A] bg-[#1C1C1E] rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
-              <div className="bg-[#2C2C2E] px-4 py-2 text-xs font-medium text-[#E5C02A] flex justify-between items-center">
-                <span>Captured Target Screen</span>
-                <span className="text-gray-400">Live</span>
-              </div>
-              <div className="p-2">
-                <img 
-                  src={`data:image/png;base64,${screenshotData}`} 
-                  alt="Target Device Screenshot" 
-                  className="w-full rounded-lg object-contain max-h-[60vh]"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="w-full h-64 border-2 border-dashed border-[#2C2C2E] rounded-2xl flex flex-col items-center justify-center text-gray-500 text-sm">
-              <svg className="w-10 h-10 mb-2 opacity-40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"></path>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"></path>
-              </svg>
-              <span>Screenshot will appear here</span>
-            </div>
+      {/* Active Peek Display */}
+      <div style={{ padding: '2rem', border: '2px solid #333', borderRadius: '12px', minHeight: '140px', backgroundColor: '#f9fafb', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1rem', color: '#666' }}>Active Peek:</h2>
+          {thought && (
+            <button 
+              onClick={handleClearPeek}
+              style={{ padding: '0.4rem 0.8rem', backgroundColor: '#e5e7eb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+            >
+              Clear Peek
+            </button>
           )}
         </div>
+        <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0, wordBreak: 'break-word', color: '#111', textAlign: 'center' }}>
+          {thought || "Waiting for input..."}
+        </p>
+      </div>
 
+      {/* Spacer to push history and download button to the bottom */}
+      <div style={{ flexGrow: 1 }}></div>
+
+      {/* History Feed Section */}
+      <div style={{ borderTop: '2px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '2rem' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#374151' }}>Previous Peeks History ({history.length})</h3>
+        {history.length === 0 ? (
+          <p style={{ color: '#9ca3af', fontStyle: 'italic', margin: 0 }}>No history recorded yet.</p>
+        ) : (
+          <ul style={{ listStyleType: 'none', padding: 0, margin: 0, maxHeight: '250px', overflowY: 'auto' }}>
+            {history.map((item, index) => (
+              <li key={index} style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', backgroundColor: '#fff' }}>
+                <span style={{ fontWeight: '500', color: '#1f2937' }}>{item}</span>
+                <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>#{history.length - index}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Download Shortcut Button */}
+      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <a 
+          href="https://www.icloud.com/shortcuts/da003ebafb424909a339a60832ebf312" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ display: 'inline-block', width: '100%', padding: '1rem', backgroundColor: '#0070f3', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.05rem', boxSizing: 'border-box' }}
+        >
+          Download iOS Shortcut 📥
+        </a>
       </div>
     </div>
   );
