@@ -48,7 +48,7 @@ export default function FakeNotesPage() {
     }
 
     try {
-      const res = await fetch('https://notes-peek-8wuw-h886zanqt-robertmagic.vercel.app/api/prediction', {
+      const res = await fetch('/api/prediction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: finalPrediction }),
