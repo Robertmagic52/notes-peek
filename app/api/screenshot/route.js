@@ -5,7 +5,7 @@ let screenshotState = {
   screenshot: null,
 };
 
-// GET: Called by the iOS Shortcut to check if it should snap the screen
+// GET: Called by the iOS Shortcut to check the current command state
 export async function GET() {
   return NextResponse.json({ 
     command: screenshotState.command, 
@@ -13,24 +13,32 @@ export async function GET() {
   });
 }
 
-// POST: Called by your Frontend (to trigger) or the Shortcut (to upload the base64 image)
+// POST: Handles frontend triggers, Shortcut uploads, and the backend reset
 export async function POST(req) {
   try {
     const body = await req.json();
 
-    // If frontend clicked the button, set command to 'screenshot'
+    // If command is sent ('screenshot' or 'idle')
     if (body.command) {
       screenshotState.command = body.command;
-      if (body.command === 'screenshot') {
-        screenshotState.screenshot = null; // Clear old image on new request
+      
+      // If resetting to idle, wipe the stored screenshot image too
+      if (body.command === 'idle') {
+        screenshotState.screenshot = null;
       }
+      
+      // If triggering a new screenshot, clear out the old image first
+      if (body.command === 'screenshot') {
+        screenshotState.screenshot = null;
+      }
+
       return NextResponse.json({ success: true, command: screenshotState.command });
     }
 
     // If the Shortcut uploaded the base64 screenshot
     if (body.image) {
       screenshotState.screenshot = body.image;
-      screenshotState.command = 'idle'; // Reset command back to idle
+      screenshotState.command = 'idle'; // Reset command back to idle after successful capture
       return NextResponse.json({ success: true });
     }
 
