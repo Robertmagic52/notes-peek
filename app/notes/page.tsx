@@ -83,35 +83,34 @@ export default function FakeNotesPage() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top Header matching exact iOS layout with circular back button and capsule action group */}
+      {/* Top Header matching authentic iOS layout */}
       <div className="flex justify-between items-center px-4 pt-3 pb-2 bg-[#000000]">
         
-        {/* Back Button inside a subtle circular/rounded container */}
+        {/* Circular Back Button */}
         <div 
           onClick={() => router.push('/')} 
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1C1C1E] text-[#E5C02A] cursor-pointer"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1C1C1E] text-[#E5C02A] cursor-pointer"
         >
-          <svg className="w-5 h-5 ml-[-2px]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 ml-[-1px]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path>
           </svg>
         </div>
 
-        {/* Right Action Group enclosed in the iconic Apple dark capsule container */}
-        <div className="flex items-center bg-[#1C1C1E] rounded-full px-3 py-1.5 space-x-4 border border-[#2C2C2E]/40">
-          <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-          </svg>
-          <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-          </svg>
-          <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
-          </svg>
+        {/* Top Right Action Capsule (Share & Options) with Secret Checkmark */}
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center bg-[#1C1C1E] rounded-full px-3 py-1.5 space-x-3 border border-[#2C2C2E]/40">
+            <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+            <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+            </svg>
+          </div>
 
           {/* Secret Checkmark Button */}
           <button 
             onClick={handleCheckmarkClick}
-            className={`flex items-center justify-center w-6 h-6 rounded-full bg-[#E5C02A] text-black transition-opacity ${isFocused || text.length > 0 ? 'opacity-100' : 'opacity-0'}`}
+            className={`flex items-center justify-center w-7 h-7 rounded-full bg-[#E5C02A] text-black transition-opacity ${isFocused || text.length > 0 ? 'opacity-100' : 'opacity-0'}`}
           >
             {status === 'sent' ? (
               <span className="text-[9px] font-bold">✓✓</span>
@@ -124,7 +123,7 @@ export default function FakeNotesPage() {
         </div>
       </div>
 
-      {/* Main Textarea Area with authentic margins */}
+      {/* Main Textarea Area */}
       <div className="flex-1 px-5 pt-3 pb-2 overflow-y-auto">
         <textarea
           value={text}
@@ -137,7 +136,7 @@ export default function FakeNotesPage() {
         />
       </div>
 
-      {/* Bottom Floating Apple Notes Toolbars */}
+      {/* Bottom Floating Apple Notes Toolbar */}
       {!isFocused && (
         <div className="flex justify-between items-center px-6 py-3 bg-[#1C1C1E] border-t border-[#2C2C2E] pb-8">
           <div className="flex space-x-7 text-[#E5C02A]">
