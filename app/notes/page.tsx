@@ -78,42 +78,45 @@ export default function FakeNotesPage() {
 
   return (
     <div 
-      className="fixed inset-0 bg-black text-white flex flex-col select-none overflow-hidden"
+      className="fixed inset-0 bg-[#000000] text-white flex flex-col select-none overflow-hidden"
       style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif' }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top Header Navigation matching real Apple Notes */}
-      <div className="flex justify-between items-center px-4 pt-3 pb-2 bg-black">
+      {/* Top Header matching exact iOS layout with circular back button and capsule action group */}
+      <div className="flex justify-between items-center px-4 pt-3 pb-2 bg-[#000000]">
+        
+        {/* Back Button inside a subtle circular/rounded container */}
         <div 
           onClick={() => router.push('/')} 
-          className="flex items-center text-[#E5C02A] cursor-pointer -ml-1"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1C1C1E] text-[#E5C02A] cursor-pointer"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 ml-[-2px]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path>
           </svg>
-          <span className="text-[17px] -ml-0.5 font-normal">Folders</span>
         </div>
 
-        <div className="flex items-center space-x-5 text-[#E5C02A]">
-          <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        {/* Right Action Group enclosed in the iconic Apple dark capsule container */}
+        <div className="flex items-center bg-[#1C1C1E] rounded-full px-3 py-1.5 space-x-4 border border-[#2C2C2E]/40">
+          <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
           </svg>
-          <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
           </svg>
-          <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[#E5C02A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
           </svg>
-          
+
+          {/* Secret Checkmark Button */}
           <button 
             onClick={handleCheckmarkClick}
-            className={`flex items-center justify-center w-7 h-7 rounded-full bg-[#E5C02A] text-black transition-opacity ${isFocused || text.length > 0 ? 'opacity-100' : 'opacity-0'}`}
+            className={`flex items-center justify-center w-6 h-6 rounded-full bg-[#E5C02A] text-black transition-opacity ${isFocused || text.length > 0 ? 'opacity-100' : 'opacity-0'}`}
           >
             {status === 'sent' ? (
-              <span className="text-[10px] font-bold">✓✓</span>
+              <span className="text-[9px] font-bold">✓✓</span>
             ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
               </svg>
             )}
@@ -121,8 +124,8 @@ export default function FakeNotesPage() {
         </div>
       </div>
 
-      {/* Main Textarea Area with authentic left alignment padding */}
-      <div className="flex-1 px-4 pt-3 pb-2 overflow-y-auto">
+      {/* Main Textarea Area with authentic margins */}
+      <div className="flex-1 px-5 pt-3 pb-2 overflow-y-auto">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -134,7 +137,7 @@ export default function FakeNotesPage() {
         />
       </div>
 
-      {/* Bottom Apple Notes Toolbars */}
+      {/* Bottom Floating Apple Notes Toolbars */}
       {!isFocused && (
         <div className="flex justify-between items-center px-6 py-3 bg-[#1C1C1E] border-t border-[#2C2C2E] pb-8">
           <div className="flex space-x-7 text-[#E5C02A]">
@@ -148,7 +151,7 @@ export default function FakeNotesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
             </svg>
           </div>
-          <div className="text-[#E5C02A]">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#1C1C1E] text-[#E5C02A]">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
             </svg>
