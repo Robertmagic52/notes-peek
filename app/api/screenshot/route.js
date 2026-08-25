@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 let sessionState = {
   command: 'idle', // 'idle' or 'screenshot'
-  screenshot: null as string | null,
+  screenshot: null,
 };
 
 // GET: Returns current command state AND the screenshot image if available
@@ -14,7 +14,7 @@ export async function GET() {
 }
 
 // POST: Sets the command from the frontend OR receives the image from the Shortcut
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     const body = await req.json();
 
