@@ -92,6 +92,21 @@ export default function PeekDashboard() {
     }
   };
 
+  // BACKEND RESET FUNCTION: Clears local state AND tells the backend to wipe its image/command state
+  const handleResetScreenshot = async () => {
+    setScreenshotData(null);
+    setScreenshotStatus('idle');
+    try {
+      await fetch('/api/screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: 'idle' }),
+      });
+    } catch (err) {
+      console.error('Failed to reset backend', err);
+    }
+  };
+
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       
@@ -116,7 +131,6 @@ export default function PeekDashboard() {
         <>
           <h1>Dashboard</h1>
           
-          {/* Primary Controls */}
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
             {status === 'stop' ? (
               <button 
@@ -139,7 +153,6 @@ export default function PeekDashboard() {
             <strong>Status: {status === 'stop' ? 'Stopped' : 'Listening'}</strong>
           </div>
 
-          {/* Active Peek Display */}
           <div style={{ padding: '2rem', border: '2px solid #333', borderRadius: '12px', minHeight: '140px', backgroundColor: '#f9fafb', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h2 style={{ margin: 0, fontSize: '1rem', color: '#666' }}>Active Peek:</h2>
@@ -159,7 +172,6 @@ export default function PeekDashboard() {
 
           <div style={{ flexGrow: 1 }}></div>
 
-          {/* History Feed Section */}
           <div style={{ borderTop: '2px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '2rem' }}>
             <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#374151' }}>Previous Peeks History ({history.length})</h3>
             {history.length === 0 ? (
@@ -176,7 +188,6 @@ export default function PeekDashboard() {
             )}
           </div>
 
-          {/* Download Shortcut Button */}
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
             <a 
               href="https://www.icloud.com/shortcuts/da003ebafb424909a339a60832ebf312" 
@@ -195,12 +206,20 @@ export default function PeekDashboard() {
         <>
           <h1>Screenshot View</h1>
           
-          <button 
-            onClick={handleTriggerScreenshot}
-            style={{ width: '100%', padding: '1rem', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1.5rem' }}
-          >
-            {screenshotStatus === 'waiting' ? 'Waiting for Device...' : 'Take Screenshot'}
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <button 
+              onClick={handleTriggerScreenshot}
+              style={{ flex: 2, padding: '1rem', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}
+            >
+              {screenshotStatus === 'waiting' ? 'Waiting for Device...' : 'Take Screenshot'}
+            </button>
+            <button 
+              onClick={handleResetScreenshot}
+              style={{ flex: 1, padding: '1rem', backgroundColor: '#e5e7eb', color: '#111', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+            >
+              Reset 🔄
+            </button>
+          </div>
 
           <div style={{ textAlign: 'center', color: '#666', marginBottom: '1.5rem' }}>
             Status: <strong style={{ textTransform: 'uppercase' }}>{screenshotStatus}</strong>
